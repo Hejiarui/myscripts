@@ -1,2 +1,2 @@
 # myscripts
-Shell scripts of Linux, by me
+Shell scripts of Linux, by Hejiarui
