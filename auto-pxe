@@ -1,0 +1,125 @@
+#!/bin/bash
+
+#  set  dhcp
+while read line
+do
+    name=`echo $line | awk -F '=' '{print $1}'`
+    value=`echo $line | awk -F '=' '{print $2}'`
+    case $name in
+        "GATEWAY")
+            GATEWAY=$value
+        ;;
+        "NETMASK")
+            NETMASK=$value
+        ;;
+        "MANAGER_ETH1_IP")
+            MANAGER_ETH1_IP=$value
+        ;;
+        "BACKUP_ETH1_IP")
+            BACKUP_ETH1_IP=$value
+        ;;
+        "manager_eth1_mac")
+            manager_eth1_mac=$value
+        ;;
+        "backup_eth1_mac")
+            backup_eth1_mac=$value
+        ;;
+        "inter_eth0")
+            inter_eth0=$value
+        ;;
+        "manager_eth0_mac")
+            manager_eth0_mac=$value
+        ;;
+        "game1_eth0_mac")
+            game1_eth0_mac=$value
+        ;;
+        "backup_eth0_mac")
+            backup_eth0_mac=$value
+        ;;
+        "database_eth0_mac")
+            database_eth0_mac=$value
+        ;;
+        *)
+        ;;
+    esac
+
+done < jd_kvm.conf
+
+SUBNET=${inter_eth0}.0
+MANAGERIP=${SUBNET}.159
+GAME1IP=${SUBNET}.11
+DATABASEIP=${SUBNET}.31
+BACKUPIP=${SUBNET}.32
+
+/bin/cp -rf dhcpd.conf.temp /etc/dhcpd.conf
+DHCPCONF="/etc/dhcpd.conf"
+sed -i "s,%SUBNET%,$SUBNET,g"   $DHCPCONF
+sed -i "s,%MANAGERIP%,$MANAGERIP,g" $DHCPCONF
+sed -i "s,%manager_eth0_mac%,$manager_eth0_mac,g"   $DHCPCONF
+sed -i "s,%game1_eth0_mac%,$game1_eth0_mac,g"   $DHCPCONF
+sed -i "s,%backup_eth0_mac%,$backup_eth0_mac,g" $DHCPCONF
+sed -i "s,%database_eth0_mac%,$database_eth0_mac,g" $DHCPCONF
+sed -i "s,%GAME1IP%,$GAME1IP,g" $DHCPCONF
+sed -i "s,%DATABASEIP%,$DATABASEIP,g"   $DHCPCONF
+sed -i "s,%BACKUPIP%,$BACKUPIP,g"   $DHCPCONF
+
+#   tftp
+game1tmp=`echo ${game1_eth0_mac//:/-}`
+backuptmp=`echo ${backup_eth0_mac//:/-}`
+databasetmp=`echo ${database_eth0_mac//:/-}`
+game1pxecfg=01-$game1tmp
+/bin/cp game1.pxe $game1pxecfg
+backuppxecfg=01-$backuptmp
+/bin/cp backup.pxe $backuppxecfg
+databasepxecfg=01-$databasetmp
+/bin/cp database.pxe $databasepxecfg
+sed -i "s,%MANAGERIP%,$MANAGERIP,g" 01-*
+cp 01-* /tftpboot/linux/pxelinux.cfg/
+
+#   nfs
+/bin/cp -rf exports.temp /etc/exports
+NFSCONF="/etc/exports"
+sed -i "s,%MANAGERIP%,$MANAGERIP,g" $NFSCONF
+
+#hosts
+/bin/cp -rf hosts.temp hosts.tmp
+sed -i "s,%MANAGERIP%,$MANAGERIP,g" hosts.tmp
+sed -i "s,%GAME1IP%,$GAME1IP,g" hosts.tmp
+sed -i "s,%DATABASEIP%,$DATABASEIP,g" hosts.tmp
+sed -i "s,%BACKUPIP%,$BACKUPIP,g" hosts.tmp
+
+/bin/cp -rf hosts.tmp /etc/hosts
+sed -i "s,%HOSTNAME%,manager,g" /etc/hosts
+/bin/cp -rf hosts.tmp /export/game1/etc/hosts
+sed -i "s,%HOSTNAME%,game1,g" /export/game1/etc/hosts
+/bin/cp -rf hosts.tmp /export/database/etc/hosts
+sed -i "s,%HOSTNAME%,database,g" /export/database/etc/hosts
+/bin/cp -rf hosts.tmp /export/backup/etc/hosts
+sed -i "s,%HOSTNAME%,backup,g" /export/backup/etc/hosts
+
+# interface eth0 and eth1
+/bin/cp -rf network.temp /etc/sysconfig/network
+sed -i "s,%GATEWAY%,$GATEWAY,g" /etc/sysconfig/network
+
+# manager
+/bin/cp -rf ifcfg-eth0.temp /etc/sysconfig/network-scripts/ifcfg-eth0
+/bin/cp -rf ifcfg-eth1.temp /etc/sysconfig/network-scripts/ifcfg-eth1
+sed -i "s,%MAC%,$manager_eth0_mac,g" /etc/sysconfig/network-scripts/ifcfg-eth0
+sed -i "s,%IP%,$MANAGERIP,g" /etc/sysconfig/network-scripts/ifcfg-eth0
+sed -i "s,%NETMASK%,255.255.255.0,g" /etc/sysconfig/network-scripts/ifcfg-eth0
+
+sed -i "s,%MAC%,$manager_eth1_mac,g" /etc/sysconfig/network-scripts/ifcfg-eth1
+sed -i "s,%IP%,$MANAGER_ETH1_IP,g" /etc/sysconfig/network-scripts/ifcfg-eth1
+sed -i "s,%NETMASK%,$NETMASK,g" /etc/sysconfig/network-scripts/ifcfg-eth1
+
+# backup
+/bin/cp -rf network.temp /export/backup/etc/sysconfig/network
+sed -i "s,%GATEWAY%,$GATEWAY,g" /export/backup/etc/sysconfig/network
+/bin/cp -rf ifcfg-eth1.temp /export/backup/etc/sysconfig/network-scripts/ifcfg-eth1
+sed -i "s,%MAC%,$backup_eth0_mac,g" /export/backup/etc/sysconfig/network-scripts/ifcfg-eth0
+sed -i "s,%IP%,$BACKUPIP,g" /export/backup/etc/sysconfig/network-scripts/ifcfg-eth0
+sed -i "s,%NETMASK%,255.255.255.0,g" /export/backup/etc/sysconfig/network-scripts/ifcfg-eth0
+
+sed -i "s,%MAC%,$backup_eth1_mac,g" /export/backup/etc/sysconfig/network-scripts/ifcfg-eth1
+sed -i "s,%IP%,$BACKUP_ETH1_IP,g" /export/backup/etc/sysconfig/network-scripts/ifcfg-eth1
+sed -i "s,%NETMASK%,$NETMASK,g" /export/backup/etc/sysconfig/network-scripts/ifcfg-eth1
