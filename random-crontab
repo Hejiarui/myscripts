@@ -1,0 +1,45 @@
+#!/bin/bash
+
+cronjiarui="/var/spool/cron/crontabs/jiarui"
+
+function rand(){
+        min=$1
+        max=$(($2-$min+1))
+        num=$(cat /dev/urandom | head -n 10 | cksum | awk -F ' ' '{print $1}')
+        echo $(($num%$max+$min))
+}
+
+m_rnd=$(rand 1 59)
+
+
+#if m <10, h=10
+# m > 50, h=8
+#else h=9
+if [ $m_rnd -lt 20 ]
+then
+        h_dao=10
+        h_tui=20
+elif [ $m_rnd -gt 40 ]
+then
+        h_dao=8
+        h_tui=18
+else
+        h_dao=9
+        h_tui=19
+fi
+
+
+m_tui=$(rand 1 59)
+
+DATE=`date "+[%Y%m%d-%H:%M]"`
+echo "----------------------------" >>suijiqian.log
+echo "$DATE:">>suijiqian.log
+echo "qiandao: $h_dao: $m_rnd" >>suijiqian.log
+echo "qiantui: $h_tui: $m_tui" >>suijiqian.log
+
+
+echo "$m_rnd $h_dao * * * python /home/jiarui/qiandao.py" > $cronjiarui
+echo "$m_tui $h_tui * * * python /home/jiarui/qiantui.py" >> $cronjiarui
+
+
+exit 0
