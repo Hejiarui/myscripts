@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#big brother Rui is looking you 
+import urllib
+import urllib2
+import cookielib
+cookie = cookielib.CookieJar()
+opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie))
+
+postdata=urllib.urlencode({
+    'USER':'帐号',
+    'PASSWORD':'密码',
+    'target':'-SM-http://sso.oa.wanmei.com/PWForms/htmlauth/redirect.jsp',
+    'smauthreason':'0',
+    'postpreservationdata':'',
+    'smagentname':'-SM-Rftu9MjQVs6Vy5mqLVwh+sFgQAMfL8GkKtMsGbl2noF139B7MnivHXSkNb7QbQH1'
+})
+postdata2=urllib.urlencode({
+    'USER':'帐号',
+    'PASSWORD':'密码',
+    'SMSAVECREDS':'null',
+    'target':'-SM-http://sso.oa.wanmei.com/PWForms/htmlauth/redirect.jsp',
+    'smauthreason':'0',
+    'postpreservationdata':'',
+    'smagentname':'-SM-Rftu9MjQVs6Vy5mqLVwh+sFgQAMfL8GkKtMsGbl2noF139B7MnivHXSkNb7QbQH1'
+})
+postdata5=urllib.urlencode({
+    'method':'DoSignIn'
+})
+
+
+req = urllib2.Request(
+    url = 'http://sso.oa.wanmei.com/PWForms/loginForm/HtmlLogin.jsp',
+    data = postdata
+)
+req2 = urllib2.Request(
+    url = 'http://sso.oa.wanmei.com/siteminderagent/forms/savecreds.fcc',
+    data = postdata2
+)
+req3 = urllib2.Request(
+    url = 'http://sso.oa.wanmei.com/PWForms/index.jsp',
+)
+req4 = urllib2.Request(
+    url = 'http://sbjsps01.oa.wanmei.com/Pages/index.htm',
+)
+#autosignin 
+req5 = urllib2.Request(
+    url = 'http://sbjsps01.oa.wanmei.com/OaHomePage/Handler/signInOut.ashx',
+    data = postdata5
+)
+
+
+result = opener.open(req)
+result2 = opener.open(req2)
+result3 = opener.open(req3)
+result4 = opener.open(req4)
+result5 = opener.open(req5)
