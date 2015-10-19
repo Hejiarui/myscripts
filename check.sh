@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 
 CHKFILE="/root/maint/check.out"
 RCVFILE="/root/maint/Recovery.Base"
